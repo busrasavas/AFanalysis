@@ -1,5 +1,4 @@
 # AFanalysis
-Quick analysis for AlphaFold models. 
 
 Creates an json file from the provided pkl file containing plddt, pae, max_pae, ptm and iptm scores. Draws a PAE graph showing iptm and ptm values. 
 
