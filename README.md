@@ -7,11 +7,13 @@ Creates two figures from the provided PDB file, one is colored by chains and oth
 
 
 Usage: 
+"""
 	python AFanalysis.py --input_pkl <pkl file>
 	python AFanalysis.py --input_pdb <pdb file>
 	or 
 	python AFanalysis.py --input_pkl <pkl file> --input_pdb <pdb file>
-
+"""
+	
 Example: 
 	python AFanalysis.py --input_pkl result_model_5_multimer_v2_pred_4.pkl
 	python AFanalysis.py --input_pdb rank0.pdb
