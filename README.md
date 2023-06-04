@@ -1,17 +1,19 @@
 # AFanalysis
 
-For a quick analysis of AlphaFold models using .pkl/.json and/or .pdb files. 
+Here, you can use the provided python script for the analysis of AlphaFold models, including both local predictions that produce .pkl files and ColabFold predictions that produce .json files storing quality evaluation scores. 
 
-	If only pkl/json file is provided, outputs:
+With this script, you can only analyze one AlphaFold model at a time.
+
+	If only pkl/json file is provided, this script outputs:
 	   - a json file containing plddt, pae, max_pae, ranking confidence, ptm and iptm scores (%s.json)
 	   - draws a PAE graph showing iptm and ptm values (%s_PAE.jpeg)
 	   - draws a pLDDT graph showing the plddt score for each residue (%s_Plddt.jpeg)
 	   
-	If only pdb file is provided, outputs:
+	If only pdb file is provided, this script outputs:
 	- a PyMOL-made figure showing the structure colored by chains (%s_cbc.png)
 	- a PyMOL-made figure showing the structure colored by AlphaFold coloring (%s_cbaf.png)
 	
-	If both pkl/json and pdb files are provided, outputs:
+	If both pkl/json and pdb files are provided, this script outputs:
 	- All mentioned above and updated versions of PAE and pLDDT graphs showing the residue numbers of each monomers as lines. 
 
 Usage: 
@@ -24,11 +26,11 @@ Usage:
 	
 Example: 
 ```
-	python AFanalysis.py --data_file result_model_5_multimer_v2_pred_4.pkl
-	python AFanalysis.py --data_file result_model_5_multimer_v2_pred_4.json
+	python AFanalysis.py --data_file result_model_1_multimer_v2_pred_1.pkl
+	python AFanalysis.py --data_file result_model_1_multimer_v2_pred_1.json
 	python AFanalysis.py --pdb_file rank0.pdb
-	python AFanalysis.py --data_file result_model_5_multimer_v2_pred_4.pkl --input_pdb rank0.pdb
-	python AFanalysis.py --data_file result_model_5_multimer_v2_pred_4.json --input_pdb rank0.pdb
+	python AFanalysis.py --data_file result_model_1_multimer_v2_pred_1.pkl --input_pdb rank0.pdb
+	python AFanalysis.py --data_file result_model_1_multimer_v2_pred_1.json --input_pdb rank0.pdb
 ```
 
 Recommended to use this script by creating a conda environment.
