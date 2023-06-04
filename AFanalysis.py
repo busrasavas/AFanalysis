@@ -17,15 +17,15 @@ For a quick analysis of AlphaFold models using .pkl and/or .pdb files.
 	- All mentioned above and updated versions of PAE and pLDDT graphs showing the residue numbers of each monomers as lines. 
 
 Usage: 
-	python AFanalysis.py --input_pkl <pkl file>
-	python AFanalysis.py --input_pdb <pdb file>
+	python AFanalysis.py --data_file <pkl file>
+	python AFanalysis.py --pdb_file <pdb file>
 	or 
-	python AFanalysis.py --input_pkl <pkl file> --input_pdb <pdb file>
+	python AFanalysis.py --data_file <pkl file> --pdb_file <pdb file>
 
 Example: 
-	python AFanalysis.py --input_pkl result_model_5_multimer_v2_pred_4.pkl
-	python AFanalysis.py --input_pdb rank0.pdb
-	python AFanalysis.py --input_pkl result_model_5_multimer_v2_pred_4.pkl --input_pdb rank0.pdb
+	python AFanalysis.py --data_file result_model_5_multimer_v2_pred_4.pkl
+	python AFanalysis.py --pdb_file rank0.pdb
+	python AFanalysis.py --data_file result_model_5_multimer_v2_pred_4.pkl --pdb_file rank0.pdb
 
 
 Recommended to use this script by creating a conda environment.
@@ -52,25 +52,26 @@ from Bio import PDB
 
 # Parse command-line arguments
 parser = argparse.ArgumentParser()
-parser.add_argument("--input_pkl", type=str, help="the input pickle file to convert json file")
-parser.add_argument('--input_pdb', type=str, help='Input PDB file name', nargs='?')
+parser.add_argument("--data_file", type=str, help="the input file (pickle or JSON)")
+parser.add_argument("--pdb_file", type=str, help="Input PDB file name", nargs='?')
 args = parser.parse_args()
 
-# Check if either argument is provided
-if not args.input_pkl and not args.input_pdb:
-    print("At least one argument (input_pkl or input_pdb) is required.")
+# Check if at least one argument is provided
+if not args.data_file and not args.pdb_file:
+    print("At least one argument (data_file or pdb_file) is required.")
     parser.print_help()
     exit()
 
-# Check if the provided input_pkl is a pickle file
-if args.input_pkl and not args.input_pkl.endswith(".pkl"):
-    print("The input_pkl must be a pickle file (.pkl).")
-    parser.print_help()
-    exit()
+# Check if the provided data_file is a pickle or JSON file
+if args.data_file:
+    if not args.data_file.endswith(".pkl") and not args.data_file.endswith(".json"):
+        print("The data_file must be a pickle file (.pkl) or a JSON file (.json).")
+        parser.print_help()
+        exit()
 
-# Check if the provided input_pdb is a PDB file
-if args.input_pdb and not args.input_pdb.endswith(".pdb"):
-    print("The input_pdb must be a PDB file (.pdb).")
+# Check if the provided pdb_file is a PDB file
+if args.pdb_file and not args.pdb_file.endswith(".pdb"):
+    print("The pdb_file must be a PDB file (.pdb).")
     parser.print_help()
     exit()
 
@@ -80,54 +81,51 @@ class NumpyEncoder(json.JSONEncoder):
             return obj.tolist()
         return json.JSONEncoder.default(self, obj)
 
-if args.input_pkl:
-    # Load the data from the input pickle file
-    with open(args.input_pkl, 'rb') as f:
-        data = pickle.load(f)
+if args.data_file:
+    # Load the data from the input file (pickle or JSON)
+    if args.data_file.endswith(".pkl"):
+        with open(args.data_file, 'rb') as f:
+            data = pickle.load(f)
+    elif args.data_file.endswith(".json"):
+        with open(args.data_file, 'r') as f:
+            data = json.load(f)
 
-    # Rename the keys as "pae" and "max_pae"
-    data["pae"] = data.pop("predicted_aligned_error")
-    data["max_pae"] = data.pop("max_predicted_aligned_error")
+    # Rename the keys as "pae" and "max_pae" if loading from pickle
+    if args.data_file.endswith(".pkl"):
+        data["pae"] = data.pop("predicted_aligned_error")
+        data["max_pae"] = data.pop("max_predicted_aligned_error")
 
     # Extract the desired keys from the data
     extracted_data = {}
-    for key in ["plddt", "max_pae", "pae","ptm", "iptm"]:
-        extracted_data[key] = data[key]
+    for key in ["plddt", "max_pae", "pae", "ptm", "iptm", "ranking_confidence"]:
+        extracted_data[key] = data.get(key, [])
 
     # Generate the output file name based on the input file name
-    output_file = os.path.splitext(args.input_pkl)[0]
+    output_file = os.path.splitext(args.data_file)[0]
 
     # Convert the extracted data to a JSON string
     json_data = json.dumps(extracted_data, cls=NumpyEncoder)
 
-    # Save the JSON string to a file
-    with open('%s.json' %output_file, 'w') as f:
-        f.write(json_data)
+    # Save the JSON string to a file    
+    if args.data_file.endswith(".pkl"):
+        # Save the JSON string to a file
+        with open('%s.json' % output_file, 'w') as f:
+            f.write(json_data)
+    
 
-    # Extract pae scores from data
-    pae_data = []
-    for key in ["pae"]:
-        pae_data = data[key]
+    # Extracting relevant data
+    pae_data = data.get("pae", [])
+    iptm = data.get("iptm", [])
+    ptm = data.get("ptm", [])
+    plddt = data.get("plddt", [])
 
-    # Extract iptm&ptm scores from data
-    iptm = []
-    for key in ["iptm"]:
-        iptm= data[key]
-
-    ptm = []
-    for key in ["ptm"]:
-        ptm= data[key]
-        
-    plddt = []
-    for key in ["plddt"]:
-        plddt= data[key]
-
+    # Plotting pae_data
     data= np.array(pae_data)
     fig, ax = plt.subplots(figsize=(7,9))
     
-    if args.input_pdb:
+    if args.pdb_file:
         parser = PDB.PDBParser()
-        structure = parser.get_structure("AFmodel", args.input_pdb)
+        structure = parser.get_structure("AFmodel", args.pdb_file)
         # Initialize a dictionary to store the residue counts for each chain
         residue_counts = {}       
         # Loop over the chains in the structure
@@ -227,13 +225,13 @@ if args.input_pkl:
         plt.savefig('%s_Plddt.jpeg' %output_file, dpi=500, bbox_inches='tight')
 
 
-if args.input_pdb:
+if args.pdb_file:
     #Initiate a PyMOL session and load the provided structure. 
     pymol.finish_launching(['pymol', '-cq', '--gui'])
-    pymol.cmd.load(args.input_pdb)
+    pymol.cmd.load(args.pdb_file)
 
     # Generate the output file name based on the input file name
-    fig_name = os.path.splitext(args.input_pdb)[0]
+    fig_name = os.path.splitext(args.pdb_file)[0]
 
     #Make adjustements to show structure colored by chains
     cmd. bg_color('white')
